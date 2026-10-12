@@ -43,7 +43,7 @@ def run_episode(red: Path, blue: Path, seed: int, *, cycles: int = 24,
                     buckets[team_of(agent)].append({
                         "agent_id": agent,
                         "observation": obs.tolist() if hasattr(obs, "tolist") else obs,
-                        "num_actions": env.action_space(agent).n,
+                        "num_actions": int(env.action_space(agent).n),
                     })
                 actions = {}
                 for side, batch in buckets.items():
