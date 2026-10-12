@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -52,7 +53,8 @@ def make_evaluator(seeds: tuple[int, ...], *, cycles: int = 24,
                     outcomes.append(score)
             return {"combined_score": min(outcomes), "invalid": 0.0,
                     "matches": float(len(opponents) * len(seeds) * 2)}
-        except PolicyFailure:
+        except PolicyFailure as exc:
+            logging.getLogger(__name__).warning("sandboxed policy invalid: %s", exc)
             return {"combined_score": -10000.0, "invalid": 1.0}
         # Unexpected environment errors must abort rather than mark valid code invalid.
     return evaluate
