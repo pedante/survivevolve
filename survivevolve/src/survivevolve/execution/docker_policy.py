@@ -7,6 +7,7 @@ import json
 import os
 import select
 import subprocess
+import tempfile
 import time
 import uuid
 from pathlib import Path
@@ -24,6 +25,13 @@ class DockerPolicy:
             raise PolicyFailure("policy must be a Python file of at most 64KB")
         if any(char in str(self.source) for char in (",", "\n", "\r")):
             raise PolicyFailure("unsupported path characters")
+        # OpenEvolve creates candidate evaluation files as mode 0600.
+        # Copy bytes as inert data into a dedicated readable bind-mount file:
+        # the container user 65534 cannot read the original host tempfile.
+        self._stage = tempfile.TemporaryDirectory(prefix="sv-policy-stage-")
+        self.staged_source = Path(self._stage.name) / "candidate.py"
+        self.staged_source.write_bytes(self.source.read_bytes())
+        self.staged_source.chmod(0o644)
         self.timeout = timeout
         self.name = f"sv-policy-{uuid.uuid4().hex[:16]}"
         self._buffer = b""
@@ -34,7 +42,7 @@ class DockerPolicy:
             "--memory", "256m", "--memory-swap", "256m", "--cpus", "1",
             "--user", "65534:65534", "--tmpfs", "/tmp:rw,nosuid,nodev,size=16m",
             "--ulimit", "nofile=64:64",
-            "--mount", f"type=bind,src={self.source},dst=/code/policy.py,readonly",
+            "--mount", f"type=bind,src={self.staged_source},dst=/code/policy.py,readonly",
             image, "python", "-I", "/app/worker.py", str(seed),
         ]
         try:
@@ -43,6 +51,7 @@ class DockerPolicy:
                 stderr=subprocess.DEVNULL, bufsize=0,
             )
         except OSError as exc:
+            self._stage.cleanup()
             raise PolicyFailure(f"Docker startup failed: {type(exc).__name__}") from exc
 
     def _write(self, payload: bytes):
@@ -116,6 +125,7 @@ class DockerPolicy:
             subprocess.run(["docker", "rm", "-f", self.name], capture_output=True, timeout=3, check=False)
         except (OSError, subprocess.TimeoutExpired):
             pass
+        self._stage.cleanup()
 
     def __enter__(self):
         return self
