@@ -19,6 +19,7 @@ def test_docker_flags_prevent_credentials_and_network(tmp_path, monkeypatch):
     import survivevolve.execution.docker_policy as module
     policy = tmp_path / "candidate.py"
     policy.write_text("def act(o, a, n): return 0")
+    policy.chmod(0o600)  # Like upstream evaluator NamedTemporaryFile.
     recorded = []
     def fake_popen(args, **kwargs):
         recorded.extend(args)
@@ -26,6 +27,8 @@ def test_docker_flags_prevent_credentials_and_network(tmp_path, monkeypatch):
     monkeypatch.setattr(module.subprocess, "Popen", fake_popen)
     monkeypatch.setattr(module.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=0))
     runner = DockerPolicy(policy, 17)
+    assert runner.staged_source.stat().st_mode & 0o004  # readable by uid 65534
+    assert runner.staged_source.read_text() == policy.read_text()
     runner.close()
     for required in ("--network", "none", "--read-only", "--cap-drop", "ALL",
                      "--security-opt", "no-new-privileges", "--user", "65534:65534"):
