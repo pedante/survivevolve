@@ -86,6 +86,17 @@ def main(argv=None):
                 checkpoint = json.loads(Path(result.checkpoint_path).read_text())
                 assert result.completed_phases == 2
                 assert len(checkpoint["history"]) == 2
+                # A connected controller alone is insufficient: score real,
+                # valid sandboxed game play and retain an actual source mutation.
+                for team, population in checkpoint["populations"].items():
+                    seed = next(p for p in population["programs"]
+                                if p["id"] == f"{team}-seed")
+                    assert seed["metrics"].get("invalid") == 0.0, (
+                        f"{team} seed was not evaluated successfully by MAgent2/Docker"
+                    )
+                    assert any(p["code"] != seed["code"] for p in population["programs"]), (
+                        f"{team} had no stored scripted source mutation"
+                    )
                 print(json.dumps({
                     "kind": "scripted_not_llm", "completed_phases": 2,
                     "population_sizes": {
