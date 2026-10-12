@@ -107,6 +107,13 @@ and the [upstream update guide](docs/survivevolve/UPSTREAM.md). The original
 OpenEvolve engine remains unchanged so upstream improvements can be brought in
 without reimplementing Survivevolve.
 
+## First arena integration (M1)
+
+The [M1 Battle experiment](survivevolve/M1.md) uses real MAgent2 Battle,
+upstream OpenEvolve coevolution and restricted Docker policy workers. This
+proves the integration boundary only when its smoke and scripted CI tests pass;
+individual organism cognition and survival accounting remain future work.
+
 ## Getting started
 
 The Survivevolve arena integration is **not yet a verified, end-to-end runnable system**. Until it is, start with the upstream [OpenEvolve installation and examples](https://github.com/algorithmicsuperintelligence/openevolve#-quick-start), including its existing competitive resource-allocation and prompt-optimization examples.

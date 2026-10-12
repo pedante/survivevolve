@@ -14,6 +14,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
+arena = ["magent2==0.3.4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

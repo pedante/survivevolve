@@ -1,0 +1,5 @@
+FROM python:3.12-slim
+RUN mkdir -p /app /code
+COPY survivevolve/src/survivevolve/execution/worker.py /app/worker.py
+RUN chmod 0444 /app/worker.py
+# Never mount host credentials, Docker socket or referee code.
