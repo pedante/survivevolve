@@ -20,6 +20,12 @@ class FakePolicy(AbstractContextManager):
         return False
 
 
+class NumpyLikeScalar:
+    """Models the non-JSON-serializable integer returned by MAgent2."""
+    def __int__(self):
+        return 21
+
+
 class FakeArena:
     def __init__(self, **kwargs):
         self.agents = ["red_0", "blue_0"]
@@ -27,7 +33,7 @@ class FakeArena:
         assert seed >= 0
         return {"red_0": [], "blue_0": []}, {}
     def action_space(self, agent):
-        return SimpleNamespace(n=21)
+        return SimpleNamespace(n=NumpyLikeScalar())
     def step(self, actions):
         assert actions == {"red_0": 0, "blue_0": 0}
         self.agents = []
