@@ -1,0 +1,55 @@
+name: Survivevolve M0 contracts
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts-and-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.12']
+    steps:
+      - name: Checkout including base history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Protect upstream-owned paths
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          if [[ "$HEAD_BRANCH" == sync/upstream-* ]]; then
+            python survivevolve/tools/check_upstream_changes.py --base "$BASE_SHA" --allow-upstream-sync
+          else
+            python survivevolve/tools/check_upstream_changes.py --base "$BASE_SHA"
+          fi
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install existing upstream and separate Survivevolve package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+          python -m pip install -e './survivevolve[dev]'
+      - name: Run Survivevolve contracts and upstream coevolution tests (offline)
+        env:
+          OPENAI_API_KEY: test
+        run: |
+          python -m pytest -q survivevolve/tests
+          python -m pytest -q tests/test_coevolution.py
+      - name: Smoke-test original OpenEvolve offline competition (no model calls)
+        if: matrix.python == '3.12'
+        run: |
+          python examples/competitive_resource_allocation/compare.py \
+            --output /tmp/survivevolve-m0-upstream-smoke --seeds 0

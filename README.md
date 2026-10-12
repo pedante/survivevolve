@@ -99,6 +99,14 @@ LLM-generated Python is untrusted input. Candidate execution requires an indepen
 
 We intend to save source revisions, prompts, model/provider settings, seeds, opponent versions, resource expenditure, failures, and results. Randomized comparisons should use repeated runs and held-out conditions rather than relying on a single impressive trajectory.
 
+## Development architecture
+
+Development lives in the independent [`survivevolve/`](survivevolve/) Python
+package. Start with the [architecture and module boundaries](docs/survivevolve/ARCHITECTURE.md)
+and the [upstream update guide](docs/survivevolve/UPSTREAM.md). The original
+OpenEvolve engine remains unchanged so upstream improvements can be brought in
+without reimplementing Survivevolve.
+
 ## Getting started
 
 The Survivevolve arena integration is **not yet a verified, end-to-end runnable system**. Until it is, start with the upstream [OpenEvolve installation and examples](https://github.com/algorithmicsuperintelligence/openevolve#-quick-start), including its existing competitive resource-allocation and prompt-optimization examples.
