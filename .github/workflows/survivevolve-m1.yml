@@ -1,0 +1,41 @@
+name: Survivevolve M1 arena integration
+
+on:
+  pull_request:
+    branches: [main, feat/m0-upstream-safe-foundation]
+  push:
+    branches: [feat/m1-openevolve-magent2]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-arena-and-coevolution:
+    name: MAgent2, Docker, upstream OpenEvolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install original OpenEvolve and independent package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+          python -m pip install -e './survivevolve[dev,arena]'
+      - name: Run offline contract and security unit tests
+        run: python -m pytest -q survivevolve/tests
+      - name: Build isolated Python policy worker
+        run: docker build -f survivevolve/docker/Dockerfile.policy -t survivevolve-policy:m1 .
+      - name: Check isolation against malicious candidate actions
+        env:
+          SV_DOCKER_TEST: '1'
+        run: python -m pytest -q survivevolve/tests/test_m1_docker_integration.py
+      - name: Real MAgent2 Battle match, no model
+        run: python -m survivevolve.engines.openevolve_battle --smoke --seed 17 --cycles 3
+      - name: Actual OpenEvolve coevolution, scripted local proposals (NOT a model)
+        run: python -m survivevolve.engines.scripted_smoke --cycles 3
